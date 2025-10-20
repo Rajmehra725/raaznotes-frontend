@@ -1,105 +1,150 @@
-/* index.css - Plain CSS for Raaz Notes */
-
-:root{
-  --bg1: #4f46e5; /* indigo */
-  --bg2: #ec4899; /* pink */
-  --card: #ffffff;
-  --muted:#6b7280;
-  --accent:#111827;
-  --radius:14px;
+body, html {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: #f2f4f7;
+  color: #333;
+  transition: all 0.3s ease;
 }
 
-*{box-sizing:border-box}
-html,body,#root{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
-
-.page{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  background: linear-gradient(135deg,var(--bg1),var(--bg2));
-  color: #111827;
-  padding:24px;
-  gap:18px;
+.page.dark {
+  background: #1e1e2f;
+  color: #eee;
 }
 
-/* Header */
-.header{
-  text-align:center;
-  color:white;
-  margin-bottom:6px;
-}
-.header h1{margin:0;font-size:28px;letter-spacing:0.5px;}
-.header .sub{margin:6px 0 0;opacity:0.95;font-size:14px}
-
-/* Main container */
-.container{
-  width:100%;
-  max-width:1100px;
-  margin:0 auto;
-  display:grid;
-  grid-template-columns: 360px 1fr;
-  gap:20px;
-  align-items:start;
+.header {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(45deg, #4a90e2, #0077b6);
+  color: white;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
 
-/* Card style */
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:18px;
-  box-shadow: 0 6px 20px rgba(2,6,23,0.18);
+.sub {
+  opacity: 0.8;
 }
 
-/* Form card */
-.form-card .label{display:block;margin-bottom:8px;font-weight:600;color:var(--accent)}
-.input, .textarea{
-  width:100%;
-  border:1px solid #e5e7eb;
-  padding:10px 12px;
-  border-radius:8px;
-  margin-bottom:12px;
-  font-size:14px;
+.toolbar {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
-.textarea{min-height:120px;resize:vertical}
 
-/* Button */
-.btn{
-  display:inline-block;
-  background: linear-gradient(90deg,var(--bg1),var(--bg2));
-  color:white;border:none;padding:10px 14px;border-radius:10px;
-  cursor:pointer;font-weight:600;
-  box-shadow: 0 6px 18px rgba(79,70,229,0.2);
+.search {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  width: 200px;
+  outline: none;
 }
-.btn:active{transform:translateY(1px)}
 
-/* Notes area */
-.notes .notes-title{margin:0 0 10px;color:white}
-.notes{color:white}
-.notes-grid{
-  display:grid;
-  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
-  gap:12px;
+.toggle {
+  background: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: 0.3s;
 }
-.note-card{
-  background: rgba(255,255,255,0.95);
-  color:var(--accent);
-  padding:12px;
-  border-radius:12px;
-  min-height:80px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  box-shadow: 0 4px 14px rgba(2,6,23,0.06);
+
+.toggle:hover {
+  transform: scale(1.05);
 }
-.note-title{margin:0;font-size:16px}
-.note-content{margin:0;color:var(--muted);font-size:14px}
-.note-date{margin-top:auto;color:#9ca3af;font-size:12px}
 
-/* Footer */
-.footer{text-align:center;color:white;opacity:0.9;margin-top:10px}
+.container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 15px;
+}
 
-/* Responsive */
-@media (max-width: 880px){
-  .container{grid-template-columns: 1fr; padding:0 8px}
-  .header h1{font-size:24px}
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.page.dark .card {
+  background: #2a2a40;
+  color: #eee;
+}
+
+.label {
+  font-weight: bold;
+}
+
+.input, .textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 6px 0 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.btn {
+  background: #0077b6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn:hover {
+  background: #023e8a;
+}
+
+.notes-title {
+  margin-bottom: 10px;
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.note-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.note-card:hover {
+  transform: scale(1.03);
+}
+
+.note-card.pinned {
+  border: 2px solid gold;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.note-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  margin-left: 8px;
+}
+
+.note-content {
+  margin-top: 10px;
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+  opacity: 0.7;
 }

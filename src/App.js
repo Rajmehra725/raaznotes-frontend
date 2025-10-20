@@ -8,6 +8,9 @@ function App() {
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [search, setSearch] = useState("");
+  const [editId, setEditId] = useState(null);
+  const [dark, setDark] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fetchNotes = async () => {
@@ -15,9 +18,12 @@ function App() {
     try {
       const res = await axios.get(`${API_BASE}/api/notes`);
       setNotes(res.data);
+      localStorage.setItem("notes", JSON.stringify(res.data)); // offline support
     } catch (err) {
       console.error("Fetch error:", err);
-      alert("Backend se connect nahi ho pa raha. URL check karo.");
+      alert("Backend se connect nahi ho pa raha. Local notes dikha rahe hain.");
+      const local = localStorage.getItem("notes");
+      if (local) setNotes(JSON.parse(local));
     } finally {
       setLoading(false);
     }
@@ -25,30 +31,79 @@ function App() {
 
   useEffect(() => {
     fetchNotes();
-    // eslint-disable-next-line
   }, []);
 
-  const addNote = async () => {
+  const addOrUpdateNote = async () => {
     if (!title.trim() || !content.trim()) {
       alert("Title aur Content dono chahiye");
       return;
     }
+
     try {
-      await axios.post(`${API_BASE}/api/notes`, { title, content });
+      if (editId) {
+        await axios.put(`${API_BASE}/api/notes/${editId}`, { title, content });
+        setEditId(null);
+      } else {
+        await axios.post(`${API_BASE}/api/notes`, { title, content });
+      }
       setTitle("");
       setContent("");
       fetchNotes();
     } catch (err) {
-      console.error("Add error:", err);
-      alert("Note add karne me error. Backend check karo.");
+      console.error("Save error:", err);
+      alert("Note save karne me error. Backend check karo.");
     }
   };
 
+  const deleteNote = async (id) => {
+    if (!window.confirm("Delete karna hai?")) return;
+    try {
+      await axios.delete(`${API_BASE}/api/notes/${id}`);
+      fetchNotes();
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Delete karne me problem aayi.");
+    }
+  };
+
+  const editNote = (note) => {
+    setTitle(note.title);
+    setContent(note.content);
+    setEditId(note._id);
+  };
+
+  const togglePin = async (id) => {
+    try {
+      await axios.patch(`${API_BASE}/api/notes/${id}/pin`);
+      fetchNotes();
+    } catch (err) {
+      console.error("Pin error:", err);
+    }
+  };
+
+  const filteredNotes = notes
+    .filter((n) =>
+      n.title.toLowerCase().includes(search.toLowerCase()) ||
+      n.content.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => (b.pinned === true) - (a.pinned === true));
+
   return (
-    <div className="page">
+    <div className={`page ${dark ? "dark" : ""}`}>
       <header className="header">
         <h1>📝 Raaz Notes</h1>
-        <p className="sub">Simple MERN Notes app — Plain CSS version</p>
+        <p className="sub">Advanced MERN Notes App — Plain CSS Edition</p>
+        <div className="toolbar">
+          <input
+            className="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="🔍 Search notes..."
+          />
+          <button className="toggle" onClick={() => setDark(!dark)}>
+            {dark ? "☀️ Light" : "🌙 Dark"}
+          </button>
+        </div>
       </header>
 
       <main className="container">
@@ -69,20 +124,34 @@ function App() {
             placeholder="Note ka content"
           />
 
-          <button className="btn" onClick={addNote}>Add Note</button>
+          <button className="btn" onClick={addOrUpdateNote}>
+            {editId ? "Update Note" : "Add Note"}
+          </button>
         </section>
 
         <section className="notes">
           <h2 className="notes-title">Saved Notes</h2>
           {loading ? (
             <p>Loading...</p>
-          ) : notes.length === 0 ? (
-            <p>No notes saved.</p>
+          ) : filteredNotes.length === 0 ? (
+            <p>No notes found.</p>
           ) : (
             <div className="notes-grid">
-              {notes.map((n) => (
-                <article key={n._id} className="note-card">
-                  <h3 className="note-title">{n.title}</h3>
+              {filteredNotes.map((n) => (
+                <article
+                  key={n._id}
+                  className={`note-card ${n.pinned ? "pinned" : ""}`}
+                >
+                  <div className="note-header">
+                    <h3 className="note-title">{n.title}</h3>
+                    <div className="note-actions">
+                      <button onClick={() => togglePin(n._id)} title="Pin">
+                        {n.pinned ? "📌" : "📍"}
+                      </button>
+                      <button onClick={() => editNote(n)}>✏️</button>
+                      <button onClick={() => deleteNote(n._id)}>🗑️</button>
+                    </div>
+                  </div>
                   <p className="note-content">{n.content}</p>
                   <small className="note-date">
                     {new Date(n.createdAt).toLocaleString()}
@@ -95,7 +164,7 @@ function App() {
       </main>
 
       <footer className="footer">
-        <p>Built by Raaz • Simple CSS • MERN</p>
+        <p>✨ Built by Raaz • With Love • MERN Edition</p>
       </footer>
     </div>
   );
