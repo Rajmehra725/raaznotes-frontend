@@ -1,26 +1,26 @@
 body, html {
   margin: 0;
   font-family: "Poppins", sans-serif;
-  background: #f2f4f7;
-  color: #333;
-  transition: all 0.3s ease;
+  background: #eef1f5;
+  color: #222;
+  transition: 0.3s;
 }
 
 .page.dark {
-  background: #1e1e2f;
+  background: #1f1f2e;
   color: #eee;
 }
 
 .header {
   text-align: center;
-  padding: 20px;
-  background: linear-gradient(45deg, #4a90e2, #0077b6);
+  background: linear-gradient(45deg, #00b4d8, #0077b6);
   color: white;
+  padding: 20px;
   border-radius: 0 0 20px 20px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
 
 .sub {
+  font-size: 14px;
   opacity: 0.8;
 }
 
@@ -31,25 +31,22 @@ body, html {
   gap: 10px;
 }
 
-.search {
-  padding: 8px 12px;
+.search, select, .toggle {
   border-radius: 8px;
   border: none;
-  width: 200px;
+  padding: 8px 10px;
+  font-size: 14px;
   outline: none;
 }
 
 .toggle {
-  background: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 10px;
   cursor: pointer;
+  background: #fff;
   transition: 0.3s;
 }
 
 .toggle:hover {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 .container {
@@ -60,35 +57,34 @@ body, html {
 
 .card {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
   padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
   margin-bottom: 30px;
 }
 
 .page.dark .card {
-  background: #2a2a40;
-  color: #eee;
-}
-
-.label {
-  font-weight: bold;
+  background: #2c2c42;
 }
 
 .input, .textarea {
   width: 100%;
-  padding: 8px;
-  margin: 6px 0 15px;
   border-radius: 6px;
   border: 1px solid #ccc;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.textarea {
+  min-height: 80px;
 }
 
 .btn {
   background: #0077b6;
   color: white;
-  border: none;
-  border-radius: 6px;
   padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
 }
@@ -97,31 +93,21 @@ body, html {
   background: #023e8a;
 }
 
-.notes-title {
-  margin-bottom: 10px;
-}
-
 .notes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 15px;
 }
 
 .note-card {
-  background: #fff;
   border-radius: 10px;
   padding: 15px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  position: relative;
-  transition: transform 0.3s;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
 }
 
 .note-card:hover {
   transform: scale(1.03);
-}
-
-.note-card.pinned {
-  border: 2px solid gold;
 }
 
 .note-header {
@@ -133,13 +119,43 @@ body, html {
 .note-actions button {
   background: none;
   border: none;
-  cursor: pointer;
   font-size: 18px;
-  margin-left: 8px;
+  cursor: pointer;
 }
 
-.note-content {
+.note-tag {
+  display: inline-block;
+  background: #caf0f8;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.note-date {
+  display: block;
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 5px;
+}
+
+.saved-msg {
+  background: #90ee90;
+  color: #055;
+  padding: 8px;
   margin-top: 10px;
+  border-radius: 8px;
+  text-align: center;
+  animation: fade-in 0.5s;
+}
+
+.fade-in {
+  animation: fade-in 0.6s ease-in;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .footer {
