@@ -3,6 +3,8 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./index.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = "https://raaznotes-backend.onrender.com";
 
@@ -90,16 +92,20 @@ const uploadImage = async (file) => {
   } catch (err) {
     console.error("Image upload failed:", err);
     alert("Image upload failed! Check backend connection.");
+    
     return "";
   }
+ 
 };
 
   // ✅ Add or Update Note
   // ✅ Add or Update Note with proper Cloudinary upload
 const saveNote = async () => {
   if (!title.trim() || !content.trim()) {
-    return alert("Title aur Content dono chahiye!");
+    return toast.warn("⚠️ Title aur Content dono chahiye!");
   }
+
+  setLoading(true); // ✅ Start loading before API call
 
   let imageUrl = imagePreview || ""; // default: existing image in edit mode
 
@@ -109,18 +115,19 @@ const saveNote = async () => {
       const formData = new FormData();
       formData.append("image", image); // must match backend multer key
       const res = await axios.post(`${API_BASE}/api/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
+
       if (res.data && res.data.imageUrl) {
         imageUrl = res.data.imageUrl;
       } else {
-        return alert("Image upload failed! Check backend connection.");
+        toast.error("❌ Image upload failed! Check backend connection.");
       }
     } catch (err) {
       console.error("Image upload error:", err);
-      return alert("Image upload failed! Check backend connection.");
+      toast.error("❌ Image upload failed! Check backend connection.");
+      setLoading(false);
+      return;
     }
   }
 
@@ -130,8 +137,10 @@ const saveNote = async () => {
     if (editId) {
       await axios.put(`${API_BASE}/api/notes/${editId}`, noteData);
       setEditId(null);
+      toast.success("✅ Note Updated Successfully!");
     } else {
       await axios.post(`${API_BASE}/api/notes`, noteData);
+      toast.success("✅ Note Saved Successfully!");
     }
 
     // Reset form
@@ -142,10 +151,13 @@ const saveNote = async () => {
     setColor("#ffffff");
     setImage(null);
     setImagePreview("");
-    fetchNotes();
+
+    await fetchNotes();
   } catch (err) {
     console.error("Save note error:", err);
-    alert("Backend se connect nahi ho pa raha.");
+    toast.error("❌ Backend se connect nahi ho pa raha!");
+  } finally {
+    setLoading(false); // ✅ Stop loading after everything
   }
 };
 
@@ -408,13 +420,29 @@ const saveNote = async () => {
                 </div>
 
                 {note.image && (
-                  <img
-                    src={note.image}
-                    alt="Note"
-                    className="img-fluid rounded mt-2"
-                    style={{ maxHeight: "150px", objectFit: "cover", width: "100%" }}
-                  />
-                )}
+  <div
+    style={{
+      width: "100%",
+      backgroundColor: "#f9f9f9",
+      borderRadius: "10px",
+      overflow: "hidden",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <img
+      src={note.image}
+      alt="Note"
+      style={{
+        maxWidth: "100%",
+        maxHeight: "250px",
+        objectFit: "contain",
+      }}
+    />
+  </div>
+)}
+
 
                 <p className={`mt-2 ${expanded[note._id] ? "" : "text-truncate"}`}>
                   {note.content}
@@ -440,6 +468,7 @@ const saveNote = async () => {
             </div>
           </div>
         ))}
+          <ToastContainer position="top-center" autoClose={2000} />
       </div>
 
       <footer className="text-center mt-4 py-3 text-secondary">
