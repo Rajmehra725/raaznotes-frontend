@@ -4,75 +4,80 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./index.css";
 
+// ✅ API base (change this if needed)
 const API_BASE = process.env.REACT_APP_API_URL || "https://raaz-notes-backend.onrender.com";
 
-// Static Login Credentials
+// ✅ Login credentials (simple frontend check)
 const USERNAME = "raaz";
 const PASSWORD = "12345";
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [loginUser, setLoginUser] = useState("");
-  const [loginPass, setLoginPass] = useState("");
-  const [loginError, setLoginError] = useState("");
-
+  // ---------------- STATE ----------------
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tag, setTag] = useState("");
-  const [reminder, setReminder] = useState("");
   const [color, setColor] = useState("#ffffff");
-  const [search, setSearch] = useState("");
+  const [reminder, setReminder] = useState("");
   const [editId, setEditId] = useState(null);
-  const [dark, setDark] = useState(false);
-  const [expanded, setExpanded] = useState({}); // ✅ added
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  // image
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
 
-  // Fetch Notes
+  // login
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginUser, setLoginUser] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+
+  // ---------------- FETCH NOTES ----------------
   const fetchNotes = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
       const res = await axios.get(`${API_BASE}/api/notes`);
       setNotes(res.data);
+      setLoading(false);
     } catch (err) {
       console.error(err);
-      const local = localStorage.getItem("notes");
-      if (local) setNotes(JSON.parse(local));
-    } finally {
-      setLoading(false);
+      alert("Backend se connect nahi ho pa raha!");
     }
   };
 
   useEffect(() => {
-    if (loggedIn) fetchNotes();
-    const draft = localStorage.getItem("draft");
-    if (draft) {
-      const d = JSON.parse(draft);
-      setTitle(d.title || "");
-      setContent(d.content || "");
-    }
-  }, [loggedIn]);
+    if (isLoggedIn) fetchNotes();
+  }, [isLoggedIn]);
 
-  useEffect(() => {
-    localStorage.setItem("draft", JSON.stringify({ title, content }));
-  }, [title, content]);
+  // ---------------- IMAGE UPLOAD ----------------
+ const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-  // ✅ Login
-  const handleLogin = () => {
-    if (loginUser === USERNAME && loginPass === PASSWORD) {
-      setLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Invalid username or password!");
-    }
-  };
+  const formData = new FormData();
+  formData.append("image", file);
 
-  // ✅ Add or Update Note
+  try {
+    const res = await axios.post(`${API_BASE}/api/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    setImageUrl(res.data.imageUrl);
+    alert("✅ Image uploaded successfully!");
+  } catch (err) {
+    console.error("Upload failed:", err);
+    alert("❌ Image upload failed!");
+  }
+};
+
+  // ---------------- SAVE NOTE ----------------
   const saveNote = async () => {
-    if (!title.trim() || !content.trim())
-      return alert("Title aur Content dono chahiye!");
+    if (!title.trim() || !content.trim()) {
+      alert("Title aur Content dono chahiye!");
+      return;
+    }
 
-    const noteData = { title, content, tag, reminder, color };
+    const noteData = { title, content, tag, color, reminder, image };
+
     try {
       if (editId) {
         await axios.put(`${API_BASE}/api/notes/${editId}`, noteData);
@@ -80,159 +85,144 @@ function App() {
       } else {
         await axios.post(`${API_BASE}/api/notes`, noteData);
       }
-      setTitle("");
-      setContent("");
-      setTag("");
-      setReminder("");
-      setColor("#ffffff");
+      resetForm();
       fetchNotes();
     } catch (err) {
       console.error(err);
-      alert("Backend se connect nahi ho pa raha.");
+      alert("Error saving note!");
     }
   };
 
-  // ✅ Delete
+  // ---------------- DELETE NOTE ----------------
   const deleteNote = async (id) => {
-    if (!window.confirm("Kya aap delete karna chahte hain?")) return;
+    if (!window.confirm("Kya aap sach me delete karna chahte ho?")) return;
     try {
       await axios.delete(`${API_BASE}/api/notes/${id}`);
       fetchNotes();
     } catch (err) {
       console.error(err);
-      alert("Delete failed!");
+      alert("Error deleting note!");
     }
   };
 
-  // ✅ Edit
+  // ---------------- EDIT NOTE ----------------
   const editNote = (note) => {
     setTitle(note.title);
     setContent(note.content);
     setTag(note.tag || "");
-    setReminder(note.reminder || "");
     setColor(note.color || "#ffffff");
+    setReminder(note.reminder || "");
+    setImage(note.image || null);
     setEditId(note._id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ✅ Share
-  const shareNote = (note) => {
-    if (navigator.share) {
-      navigator.share({ title: note.title, text: note.content });
+  // ---------------- RESET FORM ----------------
+  const resetForm = () => {
+    setTitle("");
+    setContent("");
+    setTag("");
+    setColor("#ffffff");
+    setReminder("");
+    setImage(null);
+    setImagePreview("");
+  };
+
+  // ---------------- LOGIN ----------------
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (loginUser === USERNAME && loginPass === PASSWORD) {
+      setIsLoggedIn(true);
+      localStorage.setItem("raazNotesLogin", "true");
     } else {
-      navigator.clipboard.writeText(`${note.title}\n${note.content}`);
-      alert("Copied to clipboard!");
+      alert("❌ Username ya password galat hai!");
     }
   };
 
-  // ✅ Toggle Expand
-  const toggleExpand = (id) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  useEffect(() => {
+    if (localStorage.getItem("raazNotesLogin") === "true") {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("raazNotesLogin");
+    setIsLoggedIn(false);
   };
 
-  // ✅ Filter + Sort
+  // ---------------- FILTERED NOTES ----------------
   const filteredNotes = notes.filter(
     (n) =>
       n.title.toLowerCase().includes(search.toLowerCase()) ||
       n.content.toLowerCase().includes(search.toLowerCase()) ||
-      (n.tag || "").toLowerCase().includes(search.toLowerCase())
+      n.tag?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // ========================== LOGIN PAGE ==============================
-  if (!loggedIn) {
+  // ---------------- LOGIN SCREEN ----------------
+  if (!isLoggedIn) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center vh-100 bg-dark text-light"
-        style={{ background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)" }}
-      >
-        <div
-          className="card shadow-lg p-4 text-center animate__animated animate__fadeIn"
-          style={{ width: "350px", borderRadius: "20px" }}
-        >
-          <h3 className="mb-3 fw-bold text-primary">🔐 Raaz Notes Login</h3>
-          <input
-            type="text"
-            className="form-control mb-2"
-            placeholder="Username"
-            value={loginUser}
-            onChange={(e) => setLoginUser(e.target.value)}
-          />
-          <input
-            type="password"
-            className="form-control mb-3"
-            placeholder="Password"
-            value={loginPass}
-            onChange={(e) => setLoginPass(e.target.value)}
-          />
-          <button className="btn btn-primary w-100 mb-2" onClick={handleLogin}>
-            <i className="bi bi-box-arrow-in-right"></i> Login
-          </button>
-          {loginError && <p className="text-danger small">{loginError}</p>}
-          <p className="small mt-3 text-secondary">© 2025 Raaz Notes Pro</p>
+      <div className="container d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div className="card p-4 shadow-lg" style={{ maxWidth: 400 }}>
+          <h3 className="text-center mb-3">
+            <i className="bi bi-journal-text text-primary"></i> Raaz Notes Login
+          </h3>
+          <form onSubmit={handleLogin}>
+            <div className="mb-3">
+              <label className="form-label">Username</label>
+              <input
+                className="form-control"
+                value={loginUser}
+                onChange={(e) => setLoginUser(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                required
+              />
+            </div>
+            <button className="btn btn-primary w-100">Login</button>
+          </form>
         </div>
       </div>
     );
   }
 
-  // ========================= MAIN APP ================================
+  // ---------------- MAIN UI ----------------
   return (
-    <div className={`container-fluid py-3 ${dark ? "bg-dark text-light" : "bg-light"}`}>
-      <header className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold text-primary">
-          <i className="bi bi-journal-text me-2"></i>Raaz Notes
-        </h2>
-        <div className="d-flex gap-2">
-          <input
-            type="text"
-            placeholder="🔍 Search..."
-            className="form-control"
-            style={{ maxWidth: "200px" }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button className="btn btn-outline-secondary" onClick={() => setDark(!dark)}>
-            {dark ? <i className="bi bi-sun"></i> : <i className="bi bi-moon"></i>}
-          </button>
-        </div>
-      </header>
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="fw-bold text-primary">
+          <i className="bi bi-journal-richtext"></i> Raaz Notes
+        </h3>
+        <button className="btn btn-outline-danger" onClick={handleLogout}>
+          <i className="bi bi-box-arrow-right"></i> Logout
+        </button>
+      </div>
 
-      <div className="card shadow p-3 mb-4" style={{ borderRadius: "15px" }}>
-        <h5 className="mb-3 fw-bold text-secondary">
-          <i className="bi bi-plus-circle me-2"></i>{editId ? "Update Note" : "Create Note"}
-        </h5>
+      {/* CREATE NOTE */}
+      <div className="card p-3 shadow-sm mb-4">
+        <h5 className="mb-3">{editId ? "✏️ Edit Note" : "📝 Create Note"}</h5>
         <div className="row g-3">
-          <div className="col-md-6">
+          <div className="col-md-4">
             <input
-              type="text"
               className="form-control"
               placeholder="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
-          <div className="col-md-6">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tag (optional)"
-              value={tag}
-              onChange={(e) => setTag(e.target.value)}
-            />
-          </div>
-          <div className="col-12">
-            <textarea
-              className="form-control"
-              rows="3"
-              placeholder="Write your note..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            ></textarea>
-          </div>
           <div className="col-md-4">
             <input
-              type="datetime-local"
               className="form-control"
-              value={reminder}
-              onChange={(e) => setReminder(e.target.value)}
+              placeholder="Tag"
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
             />
           </div>
           <div className="col-md-4">
@@ -241,78 +231,120 @@ function App() {
               className="form-control form-control-color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              title="Choose color"
+              title="Choose note color"
             />
           </div>
-          <div className="col-md-4 text-end">
+          <div className="col-md-6">
+            <input
+              type="datetime-local"
+              className="form-control"
+              value={reminder}
+              onChange={(e) => setReminder(e.target.value)}
+            />
+          </div>
+          <div className="col-md-6">
+            <input
+              type="file"
+              accept="image/*"
+              className="form-control"
+              onChange={handleImageUpload}
+            />
+          </div>
+          {imagePreview && (
+            <div className="text-center">
+              <img
+                src={imagePreview}
+                alt="preview"
+                className="img-fluid rounded shadow-sm mt-2"
+                style={{ maxHeight: 200 }}
+              />
+            </div>
+          )}
+          <div className="col-12">
+            <textarea
+              className="form-control"
+              placeholder="Write your note here..."
+              rows="4"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            ></textarea>
+          </div>
+          <div className="col-12 text-center">
             <button className="btn btn-success px-4" onClick={saveNote}>
-              <i className="bi bi-check2-circle me-1"></i>
-              {editId ? "Update" : "Save"}
+              <i className="bi bi-save"></i> {editId ? "Update" : "Save"}
             </button>
           </div>
         </div>
       </div>
 
-      {loading && (
-        <div className="text-center my-3">
+      {/* SEARCH BAR */}
+      <div className="input-group mb-3 shadow-sm">
+        <span className="input-group-text bg-primary text-white">
+          <i className="bi bi-search"></i>
+        </span>
+        <input
+          className="form-control"
+          placeholder="Search notes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* NOTES DISPLAY */}
+      {loading ? (
+        <div className="text-center py-5">
           <div className="spinner-border text-primary"></div>
           <p>Loading notes...</p>
         </div>
-      )}
-
-      <div className="row g-3">
-        {filteredNotes.map((note) => (
-          <div className="col-md-4 col-sm-6" key={note._id}>
-            <div
-              className="card shadow-sm border-0 h-100"
-              style={{
-                backgroundColor: note.color || "#fff",
-                borderRadius: "15px",
-                overflow: "hidden",
-              }}
-            >
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-start">
-                  <h5 className="card-title fw-bold">{note.title}</h5>
-                  <div className="btn-group">
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => editNote(note)}>
-                      <i className="bi bi-pencil-square"></i>
+      ) : (
+        <div className="row g-3">
+          {filteredNotes.length > 0 ? (
+            filteredNotes.map((note) => (
+              <div className="col-md-4" key={note._id}>
+                <div
+                  className="card shadow-sm h-100"
+                  style={{ backgroundColor: note.color || "#fff" }}
+                >
+                  <div className="card-body">
+                    <h5 className="card-title fw-bold">{note.title}</h5>
+                    {note.tag && <span className="badge bg-secondary">{note.tag}</span>}
+                    {note.image && (
+                      <img
+                        src={note.image}
+                        alt="note"
+                        className="img-fluid rounded mt-2"
+                        style={{ maxHeight: 200 }}
+                      />
+                    )}
+                    <p className="card-text mt-2">{note.content}</p>
+                    {note.reminder && (
+                      <p className="text-muted small">
+                        <i className="bi bi-alarm"></i> {new Date(note.reminder).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="card-footer d-flex justify-content-between">
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => editNote(note)}
+                    >
+                      <i className="bi bi-pencil"></i>
                     </button>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => deleteNote(note._id)}>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => deleteNote(note._id)}
+                    >
                       <i className="bi bi-trash"></i>
-                    </button>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={() => shareNote(note)}>
-                      <i className="bi bi-share"></i>
                     </button>
                   </div>
                 </div>
-                <p className={`mt-2 ${expanded[note._id] ? "" : "text-truncate"}`}>{note.content}</p>
-
-                {note.tag && <span className="badge bg-info me-2">🏷️ {note.tag}</span>}
-                {note.reminder && (
-                  <small className="text-muted d-block mt-1">
-                    ⏰ {new Date(note.reminder).toLocaleString()}
-                  </small>
-                )}
-                <small className="text-muted d-block">
-                  📅 {new Date(note.createdAt).toLocaleString()}
-                </small>
-
-                <button
-                  className="btn btn-link mt-2 p-0"
-                  onClick={() => toggleExpand(note._id)}
-                >
-                  {expanded[note._id] ? "Show Less" : "Show More"}
-                </button>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <footer className="text-center mt-4 py-3 text-secondary">
-        <p>✨ Made by Raaz • MERN Notes Pro 2025</p>
-      </footer>
+            ))
+          ) : (
+            <p className="text-center text-muted">No notes found...</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
